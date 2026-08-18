@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Portal | Commercial Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- LINK TO CENTRAL CONFIGURATION FILE -->
+  <script src="config.js"></script>
+</head>
+<body class="bg-gray-100 font-sans p-6">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- MERCHANT DASHBOARD HEADER -->
+    <header class="bg-indigo-900 text-white p-6 rounded-lg shadow-md flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold">Merchant Control Panel</h1>
+        <p class="text-indigo-200 text-sm mt-1">Manage multi-location physical stores, catalog, photos, and inventory for AI automated ordering.</p>
+      </div>
+      <div class="text-right">
+        <span class="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">● System Live</span>
+      </div>
+    </header>
+
+    <!-- SECTION 1: STORE PROFILE & MULTIPLE LOCATIONS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- LEFT: COMPANY DETAILS & ADD LOCATION FORM -->
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+        <h2 class="text-lg font-bold text-gray-800">1. Store Brand & Photo</h2>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Company / Brand Name</label>
+            <input type="text" id="storeName" placeholder="e.g. Almuhammad Hardware" class="w-full mt-1 p-2 border rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Description</label>
+            <input type="text" id="storeDesc" placeholder="e.g. Hardware and tools" class="w-full mt-1 p-2 border rounded text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700">Upload Store Logo / Cover Photo</label>
+          <input type="file" id="storeFile" accept="image/*" onchange="handleFileSelect(this, 'storeImageBase64', 'storePreview')" class="w-full mt-1 text-xs border p-1 rounded bg-gray-50">
+          <input type="hidden" id="storeImageBase64">
+          <div class="mt-2 flex items-center space-x-3">
+            <img id="storePreview" class="hidden w-16 h-16 object-cover rounded border shadow-sm">
+            <span id="storePreviewText" class="text-xs text-gray-400">No logo uploaded</span>
+          </div>
+        </div>
+        <button onclick="saveCompanyProfile()" class="w-full bg-blue-600 text-white py-1.5 rounded font-medium text-xs hover:bg-blue-700">Save Brand Profile</button>
+
+        <hr class="my-4">
+
+        <!-- ADD NEW BRANCH / LOCATION FORM -->
+        <h3 class="text-md font-bold text-indigo-900 flex items-center justify-between">
+          <span>📍 Add Store Location / Branch</span>
+          <span class="text-xs text-gray-500 font-normal">Click Map to set GPS</span>
+        </h3>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Branch Name</label>
+            <input type="text" id="bName" placeholder="e.g. Bur Dubai Branch" class="w-full mt-1 p-2 border rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Phone</label>
+            <input type="text" id="bPhone" placeholder="+971500000000" class="w-full mt-1 p-2 border rounded text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700">Address / City</label>
+          <input type="text" id="bAddress" placeholder="e.g. Street 10, Bur Dubai" class="w-full mt-1 p-2 border rounded text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 bg-gray-50 p-2 rounded border text-xs">
+          <div>Lat: <span id="latVal" class="font-bold text-blue-600">Click Map</span></div>
+          <div>Lng: <span id="lngVal" class="font-bold text-blue-600">Click Map</span></div>
+        </div>
+
+        <button onclick="addStoreBranch()" class="w-full bg-green-600 text-white py-2 rounded font-medium hover:bg-green-700">➕ Add This Store Location</button>
+      </div>
+
+      <!-- RIGHT: OPENSTREETMAP DISPLAYING ALL BRANCH PINS -->
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col">
+        <h2 class="text-sm font-bold text-gray-700 mb-2">Click Map to Pin Location Coordinates:</h2>
+        <div id="map" class="w-full h-full min-h-[350px] rounded border"></div>
+      </div>
+
+    </div>
+
+    <!-- SAVED STORE LOCATIONS LIST TABLE -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+      <h2 class="text-lg font-bold text-gray-800">Saved Store Locations & Branches</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="bg-gray-100 border-b text-gray-600">
+              <th class="p-3">Branch Name</th>
+              <th class="p-3">Address</th>
+              <th class="p-3">Phone</th>
+              <th class="p-3">Coordinates (Lat, Lng)</th>
+              <th class="p-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="branchesTable">
+            <tr><td colspan="5" class="p-4 text-center text-gray-400">No store locations added yet. Click map and add a location above!</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 2: INVENTORY -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
+      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Photo Upload</h2>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Product Title</label>
+          <input type="text" id="pTitle" placeholder="Electric Drill" class="w-full mt-1 p-2 border rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Price ($)</label>
+          <input type="number" id="pPrice" placeholder="45.00" step="0.01" class="w-full mt-1 p-2 border rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Stock Qty</label>
+          <input type="number" id="pStock" placeholder="25" class="w-full mt-1 p-2 border rounded text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Low Stock Alert</label>
+          <input type="number" id="pReorder" placeholder="5" class="w-full mt-1 p-2 border rounded text-sm">
+        </div>
+        
+        <!-- PRODUCT FILE UPLOAD -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-600">Product Picture</label>
+          <input type="file" id="pFile" accept="image/*" onchange="handleFileSelect(this, 'productImageBase64', 'productPreview')" class="w-full mt-1 text-xs border p-1 rounded bg-white">
+          <input type="hidden" id="productImageBase64">
+          <img id="productPreview" class="hidden w-10 h-10 object-cover mt-1 rounded border">
+        </div>
+
+        <div class="flex items-end">
+          <button id="addBtn" onclick="addProduct()" class="w-full bg-indigo-600 text-white p-2 rounded text-sm font-medium hover:bg-indigo-700">+ Add Product</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="bg-gray-100 border-b text-gray-600">
+              <th class="p-3">Photo</th>
+              <th class="p-3">Title</th>
+              <th class="p-3">Price</th>
+              <th class="p-3">Stock Qty</th>
+              <th class="p-3">Low-Stock Alert</th>
+              <th class="p-3">Status (AI #1)</th>
+              <th class="p-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTable">
+            <tr><td colspan="7" class="p-4 text-center text-gray-400">Loading catalog...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let supabaseClient = null;
+    let selectedLat = null;
+    let selectedLng = null;
+    let map, tempMarker;
+    let branchMarkers = [];
+    let currentCompanyId = null;
+    let editingProductId = null;
+
+    window.onload = function() {
+      map = L.map('map').setView([25.268, 55.289], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      map.on('click', function(e) {
+        selectedLat = parseFloat(e.latlng.lat).toFixed(6);
+        selectedLng = parseFloat(e.latlng.lng).toFixed(6);
+
+        document.getElementById('latVal').innerText = selectedLat;
+        document.getElementById('lngVal').innerText = selectedLng;
+
+        if (tempMarker) {
+          tempMarker.setLatLng(e.latlng);
+        } else {
+          tempMarker = L.marker(e.latlng).addTo(map);
+        }
+      });
+
+      initSupabase();
+    };
+
+    function handleFileSelect(inputElement, targetHiddenId, previewImgId) {
+      const file = inputElement.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxDim = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const base64String = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById(targetHiddenId).value = base64String;
+
+          const preview = document.getElementById(previewImgId);
+          if (preview) {
+            preview.src = base64String;
+            preview.classList.remove('hidden');
+          }
+          const textElem = document.getElementById('storePreviewText');
+          if (textElem) textElem.classList.add('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function initSupabase() {
+      try {
+        supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+        loadStoresAndProducts();
+      } catch (err) {
+        console.error("Database connection failed", err);
+      }
+    }
+
+    async function saveCompanyProfile() {
+      if (!supabaseClient) return alert("Connecting...");
+      const name = document.getElementById('storeName').value;
+      const desc = document.getElementById('storeDesc').value;
+      const imageUrl = document.getElementById('storeImageBase64').value;
+
+      if (!name) return alert("Please enter Company / Brand Name!");
+
+      const payload = { name, description: desc };
+      if (imageUrl) payload.image_url = imageUrl;
+
+      let response;
+      if (currentCompanyId) {
+        response = await supabaseClient.from('companies').update(payload).eq('id', currentCompanyId).select();
+      } else {
+        response = await supabaseClient.from('companies').insert([payload]).select();
+      }
+
+      if (response.error) {
+        alert("Error saving profile: " + response.error.message);
+      } else {
+        alert("Company Profile Saved!");
+        if (response.data && response.data.length > 0) {
+          currentCompanyId = response.data[0].id;
+        }
+      }
+    }
+
+    // ADD A NEW STORE LOCATION / BRANCH
+    async function addStoreBranch() {
+      if (!supabaseClient || !currentCompanyId) return alert("Save company profile first!");
+
+      const bName = document.getElementById('bName').value;
+      const bPhone = document.getElementById('bPhone').value;
+      const bAddress = document.getElementById('bAddress').value;
+
+      if (!bName || !selectedLat || !selectedLng) {
+        return alert("Please enter Branch Name and click a location pin on the map!");
+      }
+
+      const locationWKT = `POINT(${selectedLng} ${selectedLat})`;
+
+      const { error } = await supabaseClient
+        .from('store_branches')
+        .insert([{
+          company_id: currentCompanyId,
+          branch_name: bName,
+          phone: bPhone,
+          address: bAddress,
+          latitude: parseFloat(selectedLat),
+          longitude: parseFloat(selectedLng),
+          location: locationWKT
+        }]);
+
+      if (error) {
+        alert("Error adding branch: " + error.message);
+      } else {
+        alert("Store Location Branch Added Successfully!");
+        document.getElementById('bName').value = '';
+        document.getElementById('bPhone').value = '';
+        document.getElementById('bAddress').value = '';
+        loadBranches();
+      }
+    }
+
+    async function deleteBranch(branchId) {
+      if (!confirm("Are you sure you want to delete this store location?")) return;
+      const { error } = await supabaseClient.from('store_branches').delete().eq('id', branchId);
+      if (error) {
+        alert("Error deleting branch: " + error.message);
+      } else {
+        loadBranches();
+      }
+    }
+
+    async function loadBranches() {
+      if (!supabaseClient || !currentCompanyId) return;
+
+      const { data: branches } = await supabaseClient.from('store_branches').select('*').eq('company_id', currentCompanyId).order('created_at', { ascending: false });
+      const tbody = document.getElementById('branchesTable');
+      tbody.innerHTML = '';
+
+      // Clear existing map markers
+      branchMarkers.forEach(m => map.removeLayer(m));
+      branchMarkers = [];
+
+      if (!branches || branches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">No store locations added yet. Click map and add a branch above!</td></tr>';
+        return;
+      }
+
+      branches.forEach(b => {
+        // Add pin marker on map for every branch
+        if (b.latitude && b.longitude) {
+          const m = L.marker([b.latitude, b.longitude]).addTo(map).bindPopup(`<b>${b.branch_name}</b><br>${b.address || ''}`);
+          branchMarkers.push(m);
+        }
+
+        tbody.innerHTML += `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 font-bold text-indigo-900">📍 ${b.branch_name}</td>
+            <td class="p-3">${b.address || 'N/A'}</td>
+            <td class="p-3 text-gray-600">${b.phone || 'N/A'}</td>
+            <td class="p-3 text-xs font-mono text-gray-500">${b.latitude || 'N/A'}, ${b.longitude || 'N/A'}</td>
+            <td class="p-3">
+              <button onclick="deleteBranch('${b.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold hover:bg-red-200">🗑️ Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function addProduct() {
+      if (!supabaseClient || !currentCompanyId) return alert("Save company profile first!");
+
+      const title = document.getElementById('pTitle').value;
+      const price = parseFloat(document.getElementById('pPrice').value);
+      const stock = parseInt(document.getElementById('pStock').value);
+      const reorder = parseInt(document.getElementById('pReorder').value) || 5;
+      const imageUrl = document.getElementById('productImageBase64').value || 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300';
+
+      if (!title || isNaN(price) || isNaN(stock)) {
+        return alert("Fill in Product Title, Price, and Stock Quantity!");
+      }
+
+      let response;
+      if (editingProductId) {
+        response = await supabaseClient
+          .from('products')
+          .update({ title, price, stock_quantity: stock, reorder_threshold: reorder, image_url: imageUrl })
+          .eq('id', editingProductId);
+      } else {
+        response = await supabaseClient
+          .from('products')
+          .insert([{ company_id: currentCompanyId, title, price, stock_quantity: stock, reorder_threshold: reorder, image_url: imageUrl }]);
+      }
+
+      if (response.error) {
+        alert("Error: " + response.error.message);
+      } else {
+        resetProductForm();
+        loadStoresAndProducts();
+      }
+    }
+
+    function editProduct(id, title, price, stock, reorder, image) {
+      editingProductId = id;
+      document.getElementById('pTitle').value = title;
+      document.getElementById('pPrice').value = price;
+      document.getElementById('pStock').value = stock;
+      document.getElementById('pReorder').value = reorder;
+      
+      if (image) {
+        document.getElementById('productImageBase64').value = image;
+        const preview = document.getElementById('productPreview');
+        preview.src = image;
+        preview.classList.remove('hidden');
+      }
+
+      const addBtn = document.getElementById('addBtn');
+      addBtn.innerText = "✏️ Update Product";
+      addBtn.className = "w-full bg-amber-600 text-white p-2 rounded text-sm font-medium hover:bg-amber-700";
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      const { error } = await supabaseClient.from('products').delete().eq('id', id);
+      if (error) {
+        alert("Error deleting product: " + error.message);
+      } else {
+        loadStoresAndProducts();
+      }
+    }
+
+    function resetProductForm() {
+      editingProductId = null;
+      document.getElementById('pTitle').value = '';
+      document.getElementById('pPrice').value = '';
+      document.getElementById('pStock').value = '';
+      document.getElementById('pReorder').value = '';
+      document.getElementById('productImageBase64').value = '';
+      document.getElementById('productPreview').classList.add('hidden');
+      document.getElementById('pFile').value = '';
+      
+      const addBtn = document.getElementById('addBtn');
+      addBtn.innerText = "+ Add Product";
+      addBtn.className = "w-full bg-indigo-600 text-white p-2 rounded text-sm font-medium hover:bg-indigo-700";
+    }
+
+    async function loadStoresAndProducts() {
+      if (!supabaseClient) return;
+
+      const { data: stores } = await supabaseClient.from('companies').select('*').order('created_at', { ascending: false }).limit(1);
+      if (stores && stores.length > 0) {
+        currentCompanyId = stores[0].id;
+        document.getElementById('storeName').value = stores[0].name;
+        document.getElementById('storeDesc').value = stores[0].description || '';
+        
+        if (stores[0].image_url) {
+          document.getElementById('storeImageBase64').value = stores[0].image_url;
+          const preview = document.getElementById('storePreview');
+          preview.src = stores[0].image_url;
+          preview.classList.remove('hidden');
+          const previewText = document.getElementById('storePreviewText');
+          if (previewText) previewText.classList.add('hidden');
+        }
+
+        // Load all branches for this company
+        loadBranches();
+      }
+
+      if (!currentCompanyId) return;
+
+      const { data: products } = await supabaseClient.from('products').select('*').eq('company_id', currentCompanyId).order('created_at', { ascending: false });
+      const tbody = document.getElementById('inventoryTable');
+      tbody.innerHTML = '';
+
+      if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">No products added for this store yet.</td></tr>';
+        return;
+      }
+
+      products.forEach(p => {
+        const isLow = p.stock_quantity <= p.reorder_threshold;
+        const statusBadge = isLow 
+          ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">⚠️ LOW STOCK (AI Alert)</span>`
+          : `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Healthy</span>`;
+
+        const imgTag = p.image_url 
+          ? `<img src="${p.image_url}" class="w-12 h-12 object-cover rounded border shadow-sm">`
+          : `<div class="w-12 h-12 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-400">No Img</div>`;
+
+        const safeTitle = p.title.replace(/'/g, "\\'");
+        const safeImg = (p.image_url || '').replace(/'/g, "\\'");
+
+        tbody.innerHTML += `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">${imgTag}</td>
+            <td class="p-3 font-semibold">${p.title}</td>
+            <td class="p-3">$${parseFloat(p.price).toFixed(2)}</td>
+            <td class="p-3 font-bold">${p.stock_quantity}</td>
+            <td class="p-3 text-gray-500">${p.reorder_threshold}</td>
+            <td class="p-3">${statusBadge}</td>
+            <td class="p-3 space-x-1">
+              <button onclick="editProduct('${p.id}', '${safeTitle}', ${p.price}, ${p.stock_quantity}, ${p.reorder_threshold}, '${safeImg}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold hover:bg-blue-200">✏️ Edit</button>
+              <button onclick="deleteProduct('${p.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold hover:bg-red-200">🗑️ Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

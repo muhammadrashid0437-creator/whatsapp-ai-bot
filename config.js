@@ -1,0 +1,9 @@
+// ====================================================
+// CENTRAL PLATFORM CONFIGURATION (ADMIN KEYS)
+// ====================================================
+const CONFIG = {
+  SUPABASE_URL: "https://ctkxcgzjommxnebqcziy.supabase.co",
+  
+  // PASTE YOUR REAL ANON KEY INSIDE THE QUOTES BELOW:
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0a3hjZ3pqb21teG5lYnFjeml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTcxMzksImV4cCI6MjEwMjQ3MzEzOX0.oz1LND1H50ap69su8ZmvplfegCEeEPYg1PoOCKbgVY8"
+};
