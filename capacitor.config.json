@@ -1,0 +1,10 @@
+{
+  "appId": "com.boba.merchant",
+  "appName": "BOBA Merchant Control Panel",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://boba-07.netlify.app/business-crm.html",
+    "cleartext": true
+  }
+}

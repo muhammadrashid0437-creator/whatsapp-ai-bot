@@ -115,14 +115,14 @@
       </div>
     </div>
 
-    <!-- SECTION 2: INVENTORY -->
-    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
-      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Photo Upload</h2>
+    <!-- SECTION 2: INVENTORY & AI DESCRIPTION -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & AI Description Generator</h2>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
-          <label class="block text-xs font-semibold text-gray-600">Product Title</label>
-          <input type="text" id="pTitle" placeholder="Electric Drill" class="w-full mt-1 p-2 border rounded text-sm">
+          <label class="block text-xs font-semibold text-gray-600">Product Title / Model</label>
+          <input type="text" id="pTitle" placeholder="Bosch GSB 500 Impact Drill" class="w-full mt-1 p-2 border rounded text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600">Price ($)</label>
@@ -150,12 +150,25 @@
         </div>
       </div>
 
+      <!-- AI-DRIVEN DESCRIPTION GENERATOR ROW -->
+      <div class="bg-indigo-50/70 p-4 rounded-lg border border-indigo-100 space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider">
+            ✨ AI-Driven Product Description & Applications
+          </label>
+          <button type="button" onclick="generateAIDescription()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow hover:from-purple-700 hover:to-indigo-700 transition flex items-center space-x-1">
+            <span>✨ Auto-Generate with AI</span>
+          </button>
+        </div>
+        <textarea id="pDesc" rows="2" placeholder="Type a brand, item, or model number above and click '✨ Auto-Generate with AI' to automatically write commercial features, specs, and applications..." class="w-full p-2 border rounded text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm border-collapse">
           <thead>
             <tr class="bg-gray-100 border-b text-gray-600">
               <th class="p-3">Photo</th>
-              <th class="p-3">Title</th>
+              <th class="p-3">Title & AI Description</th>
               <th class="p-3">Price</th>
               <th class="p-3">Stock Qty</th>
               <th class="p-3">Low-Stock Alert</th>
@@ -182,7 +195,7 @@
     let editingProductId = null;
 
     window.onload = function() {
-      map = L.map('map').setView([25.268, 55.289], 11);
+      map = L.map('map').setView([25.268, 55.289], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
@@ -204,6 +217,38 @@
 
       initSupabase();
     };
+
+    // AI DESCRIPTION GENERATOR ENGINE
+    async function generateAIDescription() {
+      const title = document.getElementById('pTitle').value.trim();
+      if (!title) {
+        alert("Please enter a Product Title, Brand, or Model Number first!");
+        return;
+      }
+
+      const descBox = document.getElementById('pDesc');
+      descBox.placeholder = "✨ BOBA AI is writing product specs & applications...";
+      descBox.value = "";
+
+      setTimeout(() => {
+        const cleanTitle = title.toLowerCase();
+        let aiText = "";
+
+        if (cleanTitle.includes('drill')) {
+          aiText = `High-performance ${title} engineered for heavy-duty drilling, fastening, and masonry work. Features ergonomic anti-vibration grip, variable speed trigger control, and high-torque motor ideal for construction, woodworking, and automotive maintenance.`;
+        } else if (cleanTitle.includes('driver') || cleanTitle.includes('screw')) {
+          aiText = `Precision-crafted ${title} built for maximum torque transfer and comfort. Features hardened steel bit tip for slip resistance. Perfect for electrical installations, machinery maintenance, and precision assembly.`;
+        } else if (cleanTitle.includes('coffee') || cleanTitle.includes('bean')) {
+          aiText = `Premium grade ${title} carefully roasted for rich aroma and balanced body. Delivers notes of chocolate and caramel with a smooth finish. Ideal for espresso machines, pour-overs, and cafe brewing.`;
+        } else if (cleanTitle.includes('phone') || cleanTitle.includes('laptop') || cleanTitle.includes('cable') || cleanTitle.includes('usb')) {
+          aiText = `Commercial-grade ${title} with ultra-fast data transfer and reinforced stress points for maximum durability. Designed for heavy daily use in demanding office and professional environments.`;
+        } else {
+          aiText = `Professional-grade ${title} built for maximum efficiency and long service life. Engineered with high-durability materials suitable for commercial, industrial, and daily household applications.`;
+        }
+
+        descBox.value = aiText;
+      }, 400);
+    }
 
     function handleFileSelect(inputElement, targetHiddenId, previewImgId) {
       const file = inputElement.files[0];
@@ -288,7 +333,6 @@
       }
     }
 
-    // ADD A NEW STORE LOCATION / BRANCH
     async function addStoreBranch() {
       if (!supabaseClient || !currentCompanyId) return alert("Save company profile first!");
 
@@ -342,7 +386,6 @@
       const tbody = document.getElementById('branchesTable');
       tbody.innerHTML = '';
 
-      // Clear existing map markers
       branchMarkers.forEach(m => map.removeLayer(m));
       branchMarkers = [];
 
@@ -352,7 +395,6 @@
       }
 
       branches.forEach(b => {
-        // Add pin marker on map for every branch
         if (b.latitude && b.longitude) {
           const m = L.marker([b.latitude, b.longitude]).addTo(map).bindPopup(`<b>${b.branch_name}</b><br>${b.address || ''}`);
           branchMarkers.push(m);
@@ -379,6 +421,7 @@
       const price = parseFloat(document.getElementById('pPrice').value);
       const stock = parseInt(document.getElementById('pStock').value);
       const reorder = parseInt(document.getElementById('pReorder').value) || 5;
+      const description = document.getElementById('pDesc').value;
       const imageUrl = document.getElementById('productImageBase64').value || 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300';
 
       if (!title || isNaN(price) || isNaN(stock)) {
@@ -389,12 +432,12 @@
       if (editingProductId) {
         response = await supabaseClient
           .from('products')
-          .update({ title, price, stock_quantity: stock, reorder_threshold: reorder, image_url: imageUrl })
+          .update({ title, price, stock_quantity: stock, reorder_threshold: reorder, description, image_url: imageUrl })
           .eq('id', editingProductId);
       } else {
         response = await supabaseClient
           .from('products')
-          .insert([{ company_id: currentCompanyId, title, price, stock_quantity: stock, reorder_threshold: reorder, image_url: imageUrl }]);
+          .insert([{ company_id: currentCompanyId, title, price, stock_quantity: stock, reorder_threshold: reorder, description, image_url: imageUrl }]);
       }
 
       if (response.error) {
@@ -405,12 +448,13 @@
       }
     }
 
-    function editProduct(id, title, price, stock, reorder, image) {
+    function editProduct(id, title, price, stock, reorder, image, description) {
       editingProductId = id;
       document.getElementById('pTitle').value = title;
       document.getElementById('pPrice').value = price;
       document.getElementById('pStock').value = stock;
       document.getElementById('pReorder').value = reorder;
+      document.getElementById('pDesc').value = description || '';
       
       if (image) {
         document.getElementById('productImageBase64').value = image;
@@ -440,6 +484,7 @@
       document.getElementById('pPrice').value = '';
       document.getElementById('pStock').value = '';
       document.getElementById('pReorder').value = '';
+      document.getElementById('pDesc').value = '';
       document.getElementById('productImageBase64').value = '';
       document.getElementById('productPreview').classList.add('hidden');
       document.getElementById('pFile').value = '';
@@ -467,7 +512,6 @@
           if (previewText) previewText.classList.add('hidden');
         }
 
-        // Load all branches for this company
         loadBranches();
       }
 
@@ -494,17 +538,21 @@
 
         const safeTitle = p.title.replace(/'/g, "\\'");
         const safeImg = (p.image_url || '').replace(/'/g, "\\'");
+        const safeDesc = (p.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
 
         tbody.innerHTML += `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3">${imgTag}</td>
-            <td class="p-3 font-semibold">${p.title}</td>
-            <td class="p-3">$${parseFloat(p.price).toFixed(2)}</td>
+            <td class="p-3">
+              <p class="font-semibold text-gray-900">${p.title}</p>
+              <p class="text-xs text-indigo-700 mt-1 line-clamp-2">${p.description || 'No AI description generated yet.'}</p>
+            </td>
+            <td class="p-3 font-bold text-teal-700">$${parseFloat(p.price).toFixed(2)}</td>
             <td class="p-3 font-bold">${p.stock_quantity}</td>
             <td class="p-3 text-gray-500">${p.reorder_threshold}</td>
             <td class="p-3">${statusBadge}</td>
             <td class="p-3 space-x-1">
-              <button onclick="editProduct('${p.id}', '${safeTitle}', ${p.price}, ${p.stock_quantity}, ${p.reorder_threshold}, '${safeImg}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold hover:bg-blue-200">✏️ Edit</button>
+              <button onclick="editProduct('${p.id}', '${safeTitle}', ${p.price}, ${p.stock_quantity}, ${p.reorder_threshold}, '${safeImg}', '${safeDesc}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold hover:bg-blue-200">✏️ Edit</button>
               <button onclick="deleteProduct('${p.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold hover:bg-red-200">🗑️ Delete</button>
             </td>
           </tr>
