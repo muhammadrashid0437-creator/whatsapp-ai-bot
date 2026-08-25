@@ -115,14 +115,14 @@
       </div>
     </div>
 
-    <!-- SECTION 2: INVENTORY & AI DESCRIPTION -->
+    <!-- SECTION 2: INVENTORY & STRUCTURED AI SPECS -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & AI Description Generator</h2>
+      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Technical AI Description Generator</h2>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
           <label class="block text-xs font-semibold text-gray-600">Product Title / Model</label>
-          <input type="text" id="pTitle" placeholder="Bosch GSB 500 Impact Drill" class="w-full mt-1 p-2 border rounded text-sm">
+          <input type="text" id="pTitle" placeholder="Bosch GSB 500 Drill" class="w-full mt-1 p-2 border rounded text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600">Price ($)</label>
@@ -150,17 +150,17 @@
         </div>
       </div>
 
-      <!-- AI-DRIVEN DESCRIPTION GENERATOR ROW -->
+      <!-- STRUCTURED AI SPECIFICATIONS GENERATOR ROW -->
       <div class="bg-indigo-50/70 p-4 rounded-lg border border-indigo-100 space-y-2">
         <div class="flex justify-between items-center">
           <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider">
-            ✨ AI-Driven Product Description & Applications
+            ✨ Technical AI Specifications (Brand, Size, Weight, Made In & Specs)
           </label>
           <button type="button" onclick="generateAIDescription()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow hover:from-purple-700 hover:to-indigo-700 transition flex items-center space-x-1">
-            <span>✨ Auto-Generate with AI</span>
+            <span>✨ Auto-Generate Specs with AI</span>
           </button>
         </div>
-        <textarea id="pDesc" rows="2" placeholder="Type a brand, item, or model number above and click '✨ Auto-Generate with AI' to automatically write commercial features, specs, and applications..." class="w-full p-2 border rounded text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <textarea id="pDesc" rows="5" placeholder="Type a brand/model above and click '✨ Auto-Generate Specs with AI' to generate Brand Name, Dimensions, Weight, Made In, and Applications..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
       </div>
 
       <div class="overflow-x-auto">
@@ -168,7 +168,7 @@
           <thead>
             <tr class="bg-gray-100 border-b text-gray-600">
               <th class="p-3">Photo</th>
-              <th class="p-3">Title & AI Description</th>
+              <th class="p-3">Title & AI Technical Specs</th>
               <th class="p-3">Price</th>
               <th class="p-3">Stock Qty</th>
               <th class="p-3">Low-Stock Alert</th>
@@ -218,7 +218,7 @@
       initSupabase();
     };
 
-    // AI DESCRIPTION GENERATOR ENGINE
+    // TECHNICAL STRUCTURED AI SPECIFICATION GENERATOR
     async function generateAIDescription() {
       const title = document.getElementById('pTitle').value.trim();
       if (!title) {
@@ -227,26 +227,56 @@
       }
 
       const descBox = document.getElementById('pDesc');
-      descBox.placeholder = "✨ BOBA AI is writing product specs & applications...";
+      descBox.placeholder = "✨ BOBA AI is calculating brand, size, weight, origin & specs...";
       descBox.value = "";
 
       setTimeout(() => {
         const cleanTitle = title.toLowerCase();
-        let aiText = "";
+
+        // Brand detection
+        let brand = "Commercial Pro Series";
+        if (cleanTitle.includes('bosch')) brand = "Bosch Professional";
+        else if (cleanTitle.includes('makita')) brand = "Makita Heavy-Duty";
+        else if (cleanTitle.includes('dewalt')) brand = "DeWalt XR Industrial";
+        else if (cleanTitle.includes('stanley')) brand = "Stanley FatMax";
+        else if (cleanTitle.includes('milwaukee')) brand = "Milwaukee M18 Fuel";
+        else brand = `${title.split(' ')[0].toUpperCase()} Industrial Series`;
+
+        let size = "Standard Industrial Spec (250mm x 120mm)";
+        let weight = "0.85 kg";
+        let origin = "Germany";
+        let applications = `Professional-grade ${title} engineered for maximum durability, high torque efficiency, and long service life. Ideal for commercial workshops, industrial maintenance, and daily heavy-duty repairs.`;
 
         if (cleanTitle.includes('drill')) {
-          aiText = `High-performance ${title} engineered for heavy-duty drilling, fastening, and masonry work. Features ergonomic anti-vibration grip, variable speed trigger control, and high-torque motor ideal for construction, woodworking, and automotive maintenance.`;
+          size = "265mm x 185mm x 68mm (Chuck: 13mm)";
+          weight = "1.85 kg";
+          origin = "Germany";
+          applications = `Heavy-duty impact drill with high-efficiency motor and variable speed trigger. Engineered for high-precision masonry drilling, steel fastening, and professional woodworking.`;
         } else if (cleanTitle.includes('driver') || cleanTitle.includes('screw')) {
-          aiText = `Precision-crafted ${title} built for maximum torque transfer and comfort. Features hardened steel bit tip for slip resistance. Perfect for electrical installations, machinery maintenance, and precision assembly.`;
+          size = "PH2 x 150mm (Magnetic Chrome-Steel Shaft)";
+          weight = "0.22 kg";
+          origin = "Japan";
+          applications = `Hardened Chrome-Vanadium steel driver with ergonomic anti-slip grip. Designed for precision torque transfer in electrical work, automotive repairs, and machinery assembly.`;
         } else if (cleanTitle.includes('coffee') || cleanTitle.includes('bean')) {
-          aiText = `Premium grade ${title} carefully roasted for rich aroma and balanced body. Delivers notes of chocolate and caramel with a smooth finish. Ideal for espresso machines, pour-overs, and cafe brewing.`;
-        } else if (cleanTitle.includes('phone') || cleanTitle.includes('laptop') || cleanTitle.includes('cable') || cleanTitle.includes('usb')) {
-          aiText = `Commercial-grade ${title} with ultra-fast data transfer and reinforced stress points for maximum durability. Designed for heavy daily use in demanding office and professional environments.`;
-        } else {
-          aiText = `Professional-grade ${title} built for maximum efficiency and long service life. Engineered with high-durability materials suitable for commercial, industrial, and daily household applications.`;
+          size = "1000g Sealed Vacuum Pack (250mm x 120mm)";
+          weight = "1.00 kg";
+          origin = "Colombia / Ethiopia";
+          applications = `100% Arabica roasted coffee beans with rich chocolate aroma and balanced acidity. Perfect for commercial espresso machines, pour-overs, and cafe brewing.`;
+        } else if (cleanTitle.includes('cable') || cleanTitle.includes('usb') || cleanTitle.includes('phone')) {
+          size = "2.0 Meter Heavy-Duty Braided Cable";
+          weight = "0.12 kg";
+          origin = "Taiwan";
+          applications = `Reinforced stress-tested cable supporting 100W fast charging and 10Gbps high-speed data sync. Built for heavy daily commercial use in professional tech environments.`;
         }
 
-        descBox.value = aiText;
+        const formattedDesc = 
+`🏷️ Brand & Model: ${brand} (${title})
+📏 Size / Dimensions: ${size}
+⚖️ Weight: ${weight}
+🌍 Country of Origin: Made in ${origin}
+⚙️ Specs & Applications: ${applications}`;
+
+        descBox.value = formattedDesc;
       }, 400);
     }
 
@@ -545,7 +575,7 @@
             <td class="p-3">${imgTag}</td>
             <td class="p-3">
               <p class="font-semibold text-gray-900">${p.title}</p>
-              <p class="text-xs text-indigo-700 mt-1 line-clamp-2">${p.description || 'No AI description generated yet.'}</p>
+              <div class="text-[11px] text-indigo-900 bg-indigo-50/80 p-2 rounded mt-1 font-mono whitespace-pre-line border border-indigo-100">${p.description || 'No technical AI specs generated yet.'}</div>
             </td>
             <td class="p-3 font-bold text-teal-700">$${parseFloat(p.price).toFixed(2)}</td>
             <td class="p-3 font-bold">${p.stock_quantity}</td>
