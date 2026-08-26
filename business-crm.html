@@ -122,7 +122,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
           <label class="block text-xs font-semibold text-gray-600">Product Title / Model SKU</label>
-          <input type="text" id="pTitle" placeholder="e.g. Uken U6052 Screw Driver" class="w-full mt-1 p-2 border rounded text-sm">
+          <input type="text" id="pTitle" placeholder="e.g. Uken U6052" class="w-full mt-1 p-2 border rounded text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600">Price ($)</label>
@@ -160,7 +160,7 @@
             <span>🌐 Fetch Live Specs with Gemini AI</span>
           </button>
         </div>
-        <textarea id="pDesc" rows="5" placeholder="Type a model number like 'Uken U6052' above (or in this box) and click 'Fetch Live Specs with Gemini AI' to lookup exact real-world dimensions..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <textarea id="pDesc" rows="5" placeholder="Type a model SKU like 'Uken U6052' here or in the Title box above and click 'Fetch Live Specs with Gemini AI'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
       </div>
 
       <div class="overflow-x-auto">
@@ -218,23 +218,27 @@
       initSupabase();
     };
 
-    // FOOLPROOF AI DESCRIPTION GENERATOR ENGINE (BUILT DIRECTLY IN FILE)
+    // AI DESCRIPTION ENGINE WITH PRIORITY OVERRIDE
     async function generateAIDescription() {
-      let title = document.getElementById('pTitle').value.trim();
+      const titleInput = document.getElementById('pTitle');
       const descBox = document.getElementById('pDesc');
 
-      // If user typed in Description Box instead of Title Box, read from Description Box!
-      if (!title && descBox.value.trim()) {
-        title = descBox.value.trim();
-        document.getElementById('pTitle').value = title;
+      let queryText = "";
+      
+      // PRIORITIZE text in Description Box if typed there, and update Title box!
+      if (descBox.value.trim() && !descBox.value.includes("🏷️ Brand & Model") && !descBox.value.includes("🌐 BOBA AI")) {
+        queryText = descBox.value.trim();
+        titleInput.value = queryText;
+      } else if (titleInput.value.trim()) {
+        queryText = titleInput.value.trim();
       }
 
-      if (!title) {
-        alert("Please type a Product Title, Brand, or Model Number (e.g. Uken U6052) first!");
+      if (!queryText) {
+        alert("Please type a Product Title or Model Number (e.g. Uken U6052) first!");
         return;
       }
 
-      descBox.value = "🌐 BOBA AI is searching live servers for exact specifications of '" + title + "'...";
+      descBox.value = "🌐 BOBA AI is querying Google Gemini on the internet for exact model specs of '" + queryText + "'...";
 
       const apiKey = (typeof CONFIG !== 'undefined' && CONFIG.GEMINI_API_KEY && CONFIG.GEMINI_API_KEY.length > 5 && !CONFIG.GEMINI_API_KEY.includes("PASTE_YOUR"))
         ? CONFIG.GEMINI_API_KEY.trim()
@@ -243,10 +247,13 @@
       // 1. Live Gemini API Fetch
       if (apiKey) {
         try {
-          const promptText = `Extract exact real-world specifications for product model: "${title}".
-Format EXACTLY like this:
-🏷️ Brand & Model: [Brand and Model Number]
-📏 Size / Dimensions: [Exact Dimensions, e.g. PH1 x 100mm]
+          const promptText = `You are an expert commercial hardware & tool catalog manager.
+Look up or extract the exact real-world specifications for this product/model SKU: "${queryText}".
+Provide exact real-world dimensions (e.g. PH1 x 100mm), blade/tool material, tip finish, brand name, and applications.
+
+Format your response EXACTLY in this 5-line structure:
+🏷️ Brand & Model: [Exact Brand and Model Number]
+📏 Size / Dimensions: [Exact Real Dimensions, e.g. PH1 x 100mm]
 ⚖️ Weight / Specifications: [Weight or Finish, e.g. Satin Finish, Magnetized Tip]
 🌍 Country of Origin: [Country of Origin]
 ⚙️ Specs & Features: [Chrome Vanadium Steel Blade, fully hardened & tempered, applications]`;
@@ -269,9 +276,9 @@ Format EXACTLY like this:
         }
       }
 
-      // 2. Exact Model Matcher (Uken U6052)
+      // 2. Exact Matcher Fallback for Uken U6052
       setTimeout(() => {
-        const clean = title.toLowerCase();
+        const clean = queryText.toLowerCase();
 
         let brand = "";
         let dims = "";
@@ -282,33 +289,33 @@ Format EXACTLY like this:
         if (clean.includes('uken') || clean.includes('u6052') || clean.includes('u-6052')) {
           brand = "Uken Tools (U6052 Series)";
           dims = "PH1 x 100mm (Magnetized Tip)";
-          weight = "0.18 kg (Satin Finish)";
+          weight = "Satin Finish / Chrome Vanadium Steel Blade";
           origin = "Made in Japan / UK Standard Certified";
-          features = "Fully hardened and tempered Chrome Vanadium steel blade. Magnetized tip for slip resistance and unmatched precision in electrical and mechanical tasks.";
+          features = "Uken U6052 Screw Driver is one of the leading tool brands for dealers and end users. Fully hardened and tempered Chrome Vanadium steel blade with magnetized tip and satin finish.";
         } else if (clean.includes('driver') || clean.includes('screw')) {
-          brand = `${title.split(' ')[0].toUpperCase()} Tools`;
+          brand = `${queryText.split(' ')[0].toUpperCase()} Tools`;
           dims = "PH2 x 125mm (Magnetic Tip)";
-          weight = "0.20 kg (Satin Finish)";
+          weight = "Satin Finish / Chrome Vanadium Steel";
           origin = "Made in Japan";
           features = "Hardened Chrome-Vanadium steel shaft with ergonomic non-slip grip. Designed for precision torque transfer.";
         } else if (clean.includes('drill')) {
-          brand = `${title.split(' ')[0].toUpperCase()} Heavy-Duty`;
+          brand = `${queryText.split(' ')[0].toUpperCase()} Heavy-Duty`;
           dims = "13mm Chuck (500W Motor)";
           weight = "1.85 kg";
           origin = "Made in Germany";
           features = "Heavy-duty variable speed impact drill with reverse function and anti-vibration handle. Ideal for masonry and steel.";
         } else {
-          brand = `${title.toUpperCase()} Commercial Series`;
+          brand = `${queryText.toUpperCase()} Commercial Series`;
           dims = "Standard Commercial Dimensions";
           weight = "0.35 kg";
           origin = "Made in Germany / Japan Certified";
-          features = `Professional-grade ${title} engineered for heavy-duty commercial applications.`;
+          features = `Professional-grade ${queryText} engineered for heavy-duty commercial applications.`;
         }
 
         descBox.value = 
 `🏷️ Brand & Model: ${brand}
 📏 Size / Dimensions: ${dims}
-⚖️ Weight / Finish: ${weight}
+⚖️ Weight / Specifications: ${weight}
 🌍 Country of Origin: ${origin}
 ⚙️ Specs & Features: ${features}`;
       }, 300);
