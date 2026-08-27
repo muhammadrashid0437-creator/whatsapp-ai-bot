@@ -115,9 +115,9 @@
       </div>
     </div>
 
-    <!-- SECTION 2: INVENTORY & LIVE GEMINI 3.5 FLASH AI SPECS -->
+    <!-- SECTION 2: INVENTORY & LIVE GEMINI AI SPECS -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Live Google Gemini 3.5 Flash AI Specs</h2>
+      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Live Google Gemini AI Specs Search</h2>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
@@ -150,17 +150,17 @@
         </div>
       </div>
 
-      <!-- LIVE GEMINI 3.5 FLASH AI SPECIFICATION SEARCH ROW -->
+      <!-- LIVE GEMINI AI SPECIFICATION SEARCH ROW -->
       <div class="bg-indigo-50/70 p-4 rounded-lg border border-indigo-100 space-y-2">
         <div class="flex justify-between items-center">
           <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider">
-            🌐 Live Google Gemini 3.5 Flash AI Search
+            🌐 Live Google Gemini AI Specs Search
           </label>
           <button type="button" onclick="generateAIDescription()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow hover:from-purple-700 hover:to-indigo-700 transition flex items-center space-x-1">
-            <span>🌐 Fetch Live Specs with Gemini 3.5 Flash</span>
+            <span>🌐 Fetch Live Specs with Gemini AI</span>
           </button>
         </div>
-        <textarea id="pDesc" rows="5" placeholder="Type a brand/model number above (e.g. Uken U6052, Uken U6057, Bosch GSB 500) and click 'Fetch Live Specs'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <textarea id="pDesc" rows="5" placeholder="Enter any brand or model SKU above (e.g. Uken U6052, Nike Air Max, Bosch GSB 500, Sony WH-1000XM5) and click 'Fetch Live Specs'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
       </div>
 
       <div class="overflow-x-auto">
@@ -218,7 +218,7 @@
       initSupabase();
     };
 
-    // PURE LIVE GEMINI 3.5 FLASH API CALL
+    // 100% PURE DYNAMIC GEMINI API SEARCH (ZERO HARDCODED MODEL RULES)
     async function generateAIDescription() {
       const titleInput = document.getElementById('pTitle');
       const descBox = document.getElementById('pDesc');
@@ -226,47 +226,60 @@
       const title = titleInput.value.trim();
 
       if (!title) {
-        alert("Please type a Product Title or Model Number (e.g. Uken U6052) into the Product Title / Model SKU input box first!");
+        alert("Please enter a Product Title / Model SKU in the input box first!");
         return;
       }
 
-      descBox.value = "🌐 Querying Google Gemini 3.5 Flash API on the internet for specifications of '" + title + "'...";
+      descBox.value = "🌐 Querying Google Gemini AI servers for live specifications of '" + title + "'...";
 
       const apiKey = (typeof CONFIG !== 'undefined' && CONFIG.GEMINI_API_KEY)
         ? CONFIG.GEMINI_API_KEY.trim()
         : null;
 
       if (!apiKey || apiKey.includes("PASTE_YOUR")) {
-        alert("Gemini API Key missing or unconfigured in config.js!");
-        descBox.value = "⚠️ Please set your GEMINI_API_KEY in config.js.";
+        alert("Gemini API Key is missing in config.js! Please add a valid key from aistudio.google.com.");
+        descBox.value = "⚠️ GEMINI_API_KEY missing in config.js. Get a key from https://aistudio.google.com.";
         return;
       }
 
       try {
-        const promptText = `You are a commercial hardware and industrial product catalog specialist.
-Search and provide the exact real-world specifications for this product model SKU: "${title}".
-Provide real dimensions, materials, country of origin, and product features.
+        const promptText = `You are a professional product catalog manager.
+Look up or generate exact real-world specifications for this product/model: "${title}".
+Provide real dimensions, materials, country of origin, and key applications.
 
-Format the response EXACTLY using this 5-line structure:
-🏷️ Brand & Model: [Exact Brand and Model Number]
-📏 Dimensions & Specs: [Exact Real Dimensions]
-⚖️ Material / Weight / Finish: [Weight, material, or finish]
-🌍 Country of Origin: [Country of Origin or Certified Standard]
-⚙️ Key Applications & Features: [Commercial features and applications]`;
+Format your response EXACTLY in this 5-line structure:
+🏷️ Brand & Model: [Brand and Model Number]
+📏 Size / Dimensions: [Exact Dimensions]
+⚖️ Weight / Material: [Weight, Material, or Finish]
+🌍 Country of Origin: [Country of Origin]
+⚙️ Key Features & Applications: [Short summary of key features and applications]`;
 
-        // Direct REST API Call to Gemini 3.5 Flash
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        // 1. Try Gemini 2.0 Flash Endpoint
+        let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
-          })
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
+
+        // 2. Fallback to Gemini 1.5 Flash Endpoint if 2.0 is unavailable
+        if (!res.ok) {
+          res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          });
+        }
 
         const data = await res.json();
 
         if (data.error) {
-          descBox.value = "⚠️ Gemini API Error: " + data.error.message;
+          descBox.value = "⚠️ Gemini API Error: " + data.error.message + "\n\n(Ensure your key from https://aistudio.google.com is active).";
           return;
         }
 
@@ -274,11 +287,11 @@ Format the response EXACTLY using this 5-line structure:
         if (resultText) {
           descBox.value = resultText.trim();
         } else {
-          descBox.value = "⚠️ No specifications returned for this SKU.";
+          descBox.value = "⚠️ No specifications returned for '" + title + "'. Please type description manually.";
         }
       } catch (err) {
-        console.error("Gemini 3.5 Flash API Call Error:", err);
-        descBox.value = "⚠️ Network Error: " + err.message;
+        console.error("Gemini API Error:", err);
+        descBox.value = "⚠️ Network Error: " + err.message + ". Check your internet connection.";
       }
     }
 
