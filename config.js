@@ -1,10 +1,5 @@
-const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-goog-api-key': apiKey // <--- REQUIRED BY GOOGLE FOR AQ. KEYS
-  },
-  body: JSON.stringify({
-    contents: [{ parts: [{ text: promptText }] }]
-  })
-});
+const CONFIG = {
+  GEMINI_API_KEY: "AQ.Ab8RN6J8lzjNVjxQOMBaSGFCBBSLAX2XI-60S0OEEb3Xidr95Q",
+  SUPABASE_URL: "https://ctkxcgzjommxnebqcziy.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0a3hjZ3pqb21teG5lYnFjeml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTcxMzksImV4cCI6MjEwMjQ3MzEzOX0.oz1LND1H50ap69su8ZmvplfegCEeEPYg1PoOCKbgVY8"
+};

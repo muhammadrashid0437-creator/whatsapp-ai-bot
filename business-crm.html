@@ -115,9 +115,9 @@
       </div>
     </div>
 
-    <!-- SECTION 2: INVENTORY & LIVE GEMINI AI SPECS -->
+    <!-- SECTION 2: INVENTORY & LIVE GEMINI 3.5 FLASH AI SPECS -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Live Google Gemini AI Specs Search</h2>
+      <h2 class="text-lg font-bold text-gray-800">2. Product Inventory & Live Google Gemini 3.5 Flash AI Specs</h2>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
@@ -150,14 +150,14 @@
         </div>
       </div>
 
-      <!-- LIVE GEMINI AI SPECIFICATION SEARCH ROW -->
+      <!-- LIVE GEMINI 3.5 FLASH SPECIFICATION SEARCH ROW -->
       <div class="bg-indigo-50/70 p-4 rounded-lg border border-indigo-100 space-y-2">
         <div class="flex justify-between items-center">
           <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider">
-            🌐 Live Google Gemini AI Specs Search
+            🌐 LIVE GOOGLE GEMINI 3.5 FLASH AI SEARCH
           </label>
           <button type="button" onclick="generateAIDescription()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow hover:from-purple-700 hover:to-indigo-700 transition flex items-center space-x-1">
-            <span>🌐 Fetch Live Specs with Gemini AI</span>
+            <span>🌐 Fetch Live Specs with Gemini 3.5 Flash</span>
           </button>
         </div>
         <textarea id="pDesc" rows="5" placeholder="Enter any brand or model SKU above (e.g. Uken U6052, Nike Air Max, Bosch GSB 500, Sony WH-1000XM5) and click 'Fetch Live Specs'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
@@ -218,7 +218,7 @@
       initSupabase();
     };
 
-    // 100% PURE DYNAMIC GEMINI API SEARCH (ZERO HARDCODED MODEL RULES)
+    // FIXED GEMINI 3.5 FLASH API FETCH LOGIC FOR AQ. AUTH KEYS
     async function generateAIDescription() {
       const titleInput = document.getElementById('pTitle');
       const descBox = document.getElementById('pDesc');
@@ -230,15 +230,15 @@
         return;
       }
 
-      descBox.value = "🌐 Querying Google Gemini AI servers for live specifications of '" + title + "'...";
+      descBox.value = "🌐 Querying Google Gemini 3.5 Flash AI servers for specifications of '" + title + "'...";
 
       const apiKey = (typeof CONFIG !== 'undefined' && CONFIG.GEMINI_API_KEY)
         ? CONFIG.GEMINI_API_KEY.trim()
         : null;
 
-      if (!apiKey || apiKey.includes("PASTE_YOUR")) {
-        alert("Gemini API Key is missing in config.js! Please add a valid key from aistudio.google.com.");
-        descBox.value = "⚠️ GEMINI_API_KEY missing in config.js. Get a key from https://aistudio.google.com.";
+      if (!apiKey || apiKey.includes("PASTE_YOUR") || apiKey.includes("YOUR_ACTUAL")) {
+        alert("Gemini API Key is missing or invalid in config.js! Please add a valid key from aistudio.google.com.");
+        descBox.value = "⚠️ GEMINI_API_KEY missing/invalid in config.js. Get a key from https://aistudio.google.com.";
         return;
       }
 
@@ -254,27 +254,17 @@ Format your response EXACTLY in this 5-line structure:
 🌍 Country of Origin: [Country of Origin]
 ⚙️ Key Features & Applications: [Short summary of key features and applications]`;
 
-        // 1. Try Gemini 2.0 Flash Endpoint
-        let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        // Direct request to Gemini 3.5 Flash endpoint (using x-goog-api-key ONLY for AQ. keys)
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'x-goog-api-key': apiKey
           },
-          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          body: JSON.stringify({ 
+            contents: [{ parts: [{ text: promptText }] }] 
+          })
         });
-
-        // 2. Fallback to Gemini 1.5 Flash Endpoint if 2.0 is unavailable
-        if (!res.ok) {
-          res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey
-            },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-          });
-        }
 
         const data = await res.json();
 
