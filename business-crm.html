@@ -122,7 +122,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded border">
         <div>
           <label class="block text-xs font-semibold text-gray-600">Product Title / Model SKU</label>
-          <input type="text" id="pTitle" placeholder="e.g. Uken U6052" class="w-full mt-1 p-2 border rounded text-sm">
+          <input type="text" id="pTitle" placeholder="e.g. Uken U6052 or Bosch GSB 500" class="w-full mt-1 p-2 border rounded text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600">Price ($)</label>
@@ -160,7 +160,7 @@
             <span>🌐 Fetch Live Specs with Gemini AI</span>
           </button>
         </div>
-        <textarea id="pDesc" rows="5" placeholder="Type a model SKU like 'Uken U6052' here or in the Title box above and click 'Fetch Live Specs with Gemini AI'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <textarea id="pDesc" rows="5" placeholder="Enter Brand and Model SKU above (e.g. Uken U6052) and click 'Fetch Live Specs with Gemini AI' to search real-world dimensions..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
       </div>
 
       <div class="overflow-x-auto">
@@ -218,107 +218,69 @@
       initSupabase();
     };
 
-    // AI DESCRIPTION ENGINE WITH PRIORITY OVERRIDE
+    // PURE LIVE GOOGLE GEMINI API SEARCH (NO HARDCODED RULES, TITLE STAYS UNTOUCHED)
     async function generateAIDescription() {
-      const titleInput = document.getElementById('pTitle');
+      // 1. Read EXACT Product Title entered by merchant (DO NOT MODIFY IT!)
+      const title = document.getElementById('pTitle').value.trim();
       const descBox = document.getElementById('pDesc');
 
-      let queryText = "";
-      
-      // PRIORITIZE text in Description Box if typed there, and update Title box!
-      if (descBox.value.trim() && !descBox.value.includes("🏷️ Brand & Model") && !descBox.value.includes("🌐 BOBA AI")) {
-        queryText = descBox.value.trim();
-        titleInput.value = queryText;
-      } else if (titleInput.value.trim()) {
-        queryText = titleInput.value.trim();
-      }
-
-      if (!queryText) {
-        alert("Please type a Product Title or Model Number (e.g. Uken U6052) first!");
+      if (!title) {
+        alert("Please enter a Product Title / Brand & Model SKU (e.g. Uken U6052) in the top input box first!");
         return;
       }
 
-      descBox.value = "🌐 BOBA AI is querying Google Gemini on the internet for exact model specs of '" + queryText + "'...";
+      descBox.value = "🌐 Querying Google Gemini AI servers on the internet for specs on '" + title + "'...";
 
+      // 2. Read Gemini API Key from config.js
       const apiKey = (typeof CONFIG !== 'undefined' && CONFIG.GEMINI_API_KEY && CONFIG.GEMINI_API_KEY.length > 5 && !CONFIG.GEMINI_API_KEY.includes("PASTE_YOUR"))
         ? CONFIG.GEMINI_API_KEY.trim()
         : null;
 
-      // 1. Live Gemini API Fetch
-      if (apiKey) {
-        try {
-          const promptText = `You are an expert commercial hardware & tool catalog manager.
-Look up or extract the exact real-world specifications for this product/model SKU: "${queryText}".
-Provide exact real-world dimensions (e.g. PH1 x 100mm), blade/tool material, tip finish, brand name, and applications.
+      if (!apiKey) {
+        alert("Gemini API Key missing in config.js! Please paste your key from aistudio.google.com into config.js.");
+        descBox.value = "⚠️ Missing GEMINI_API_KEY in config.js. Add your key from aistudio.google.com to enable live internet AI searches.";
+        return;
+      }
+
+      // 3. PURE LIVE HTTP FETCH TO GOOGLE GEMINI API
+      try {
+        const promptText = `You are an expert commercial product catalog manager.
+Search and extract the exact real-world specifications for this product/model SKU: "${title}".
+Use real technical specifications for this exact brand and model number if known.
 
 Format your response EXACTLY in this 5-line structure:
 🏷️ Brand & Model: [Exact Brand and Model Number]
-📏 Size / Dimensions: [Exact Real Dimensions, e.g. PH1 x 100mm]
-⚖️ Weight / Specifications: [Weight or Finish, e.g. Satin Finish, Magnetized Tip]
-🌍 Country of Origin: [Country of Origin]
-⚙️ Specs & Features: [Chrome Vanadium Steel Blade, fully hardened & tempered, applications]`;
+📏 Dimensions & Specs: [Exact Real Dimensions / Specs]
+⚖️ Material / Weight / Finish: [Weight, material, or finish]
+🌍 Country of Origin: [Country of Origin or Certified Standard]
+⚙️ Key Applications & Features: [2-3 sentences on features and commercial applications]`;
 
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-          });
+        // Send request to Google Gemini API
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
+        });
 
-          const data = await res.json();
-          const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const data = await res.json();
 
-          if (resultText && !data.error) {
-            descBox.value = resultText.trim();
-            return;
-          }
-        } catch (err) {
-          console.error("Gemini Search Note:", err);
+        if (data.error) {
+          descBox.value = "⚠️ Google Gemini API Error: " + data.error.message;
+          return;
         }
-      }
 
-      // 2. Exact Matcher Fallback for Uken U6052
-      setTimeout(() => {
-        const clean = queryText.toLowerCase();
-
-        let brand = "";
-        let dims = "";
-        let weight = "";
-        let origin = "";
-        let features = "";
-
-        if (clean.includes('uken') || clean.includes('u6052') || clean.includes('u-6052')) {
-          brand = "Uken Tools (U6052 Series)";
-          dims = "PH1 x 100mm (Magnetized Tip)";
-          weight = "Satin Finish / Chrome Vanadium Steel Blade";
-          origin = "Made in Japan / UK Standard Certified";
-          features = "Uken U6052 Screw Driver is one of the leading tool brands for dealers and end users. Fully hardened and tempered Chrome Vanadium steel blade with magnetized tip and satin finish.";
-        } else if (clean.includes('driver') || clean.includes('screw')) {
-          brand = `${queryText.split(' ')[0].toUpperCase()} Tools`;
-          dims = "PH2 x 125mm (Magnetic Tip)";
-          weight = "Satin Finish / Chrome Vanadium Steel";
-          origin = "Made in Japan";
-          features = "Hardened Chrome-Vanadium steel shaft with ergonomic non-slip grip. Designed for precision torque transfer.";
-        } else if (clean.includes('drill')) {
-          brand = `${queryText.split(' ')[0].toUpperCase()} Heavy-Duty`;
-          dims = "13mm Chuck (500W Motor)";
-          weight = "1.85 kg";
-          origin = "Made in Germany";
-          features = "Heavy-duty variable speed impact drill with reverse function and anti-vibration handle. Ideal for masonry and steel.";
+        const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (resultText) {
+          descBox.value = resultText.trim();
         } else {
-          brand = `${queryText.toUpperCase()} Commercial Series`;
-          dims = "Standard Commercial Dimensions";
-          weight = "0.35 kg";
-          origin = "Made in Germany / Japan Certified";
-          features = `Professional-grade ${queryText} engineered for heavy-duty commercial applications.`;
+          descBox.value = "⚠️ Could not retrieve specifications. Please verify the model name and try again.";
         }
-
-        descBox.value = 
-`🏷️ Brand & Model: ${brand}
-📏 Size / Dimensions: ${dims}
-⚖️ Weight / Specifications: ${weight}
-🌍 Country of Origin: ${origin}
-⚙️ Specs & Features: ${features}`;
-      }, 300);
+      } catch (err) {
+        console.error("Gemini API Search Error:", err);
+        descBox.value = "⚠️ Network Error: " + err.message + ". Check your internet connection and Gemini API key.";
+      }
     }
 
     function handleFileSelect(inputElement, targetHiddenId, previewImgId) {
