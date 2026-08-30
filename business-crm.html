@@ -157,7 +157,7 @@
             🌐 LIVE GOOGLE GEMINI 3.5 FLASH AI SEARCH
           </label>
           <button type="button" onclick="generateAIDescription()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold shadow hover:from-purple-700 hover:to-indigo-700 transition flex items-center space-x-1">
-            <span>🌐 Fetch Live Specs with Gemini 3.5 Flash</span>
+            <span>Auto-build</span>
           </button>
         </div>
         <textarea id="pDesc" rows="5" placeholder="Enter any brand or model SKU above (e.g. Uken U6052, Nike Air Max, Bosch GSB 500, Sony WH-1000XM5) and click 'Fetch Live Specs'..." class="w-full p-2 border rounded text-xs font-mono bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
@@ -255,20 +255,17 @@ Format your response EXACTLY in this 5-line structure:
 ⚙️ Key Features & Applications: [Short summary of key features and applications]`;
 
         // Direct request to Gemini 3.5 Flash endpoint (using x-goog-api-key ONLY for AQ. keys)
-        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          body: JSON.stringify({ 
-            contents: [{ parts: [{ text: promptText }] }] 
-          })
-        });
+           const res = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+      })
 
         const data = await res.json();
 
-        if (data.error) {
+        if (data.error) { 
           descBox.value = "⚠️ Gemini API Error: " + data.error.message + "\n\n(Ensure your key from https://aistudio.google.com is active).";
           return;
         }
